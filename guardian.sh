@@ -4,6 +4,9 @@
 # If the ram or cpu usage is greather then limit or a service is failed, send a message to telegram user
 #
 # Require telegram bot and telegram user
+#
+# written by Alfio Salanitri <www.alfiosalanitri.it> and are licensed under the terms of the GNU General Public License, version 2 or higher.
+
 
 # Read the config file
 current_path=$(pwd)
