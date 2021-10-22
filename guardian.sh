@@ -50,9 +50,9 @@ telegram_title="Server \\- $server_name:"
 
 # function that send the message to telegram with curl
 function send_message() {
-  # if no a message is already sended to user. Stop to send the message each minute.
+  # Check the send-alert.txt content, it prevents the message from being sent every minute 
   if [ "no" == "$send_alert" ]; then
-    # Get the file edit time and current time, if elapsed minutes is greather then config variable, save the word yes to file to send another message on next cron check.
+    # Get the file edit time and current time, if elapsed minutes is greater than config variable, save the word yes to file to send another message on next cron check.
     current_time=$(date +%s)
     edit_filetime=$(stat -c %Y $alert_file | sed "s/$alert_filename//")
     minutes_elapsed=$((10#$(($current_time - $edit_filetime)) / 60))
@@ -74,14 +74,14 @@ if [ "$ram_usage" -gt $memory_perc_limit ]; then
   send_message "$message"
 fi
 
-# Get load average value and if is greather than core numbers +1 send an alert and exit
+# Get the load average value and if is greather than core numbers+1 send an alert and exit
 load_avg=$(uptime | grep -ohe 'load average[s:][: ].*' | awk '{ print $3 }' | sed -e 's/,/./' | sed -e 's/,//' | awk '{print int($1)}')
 if [ $load_avg -gt $server_core ]; then
   message="High CPU usage: $cpu_usage%"
   send_message "$message"
 fi
 
-# Check the systemctl services and one or more are failed, send an alert and exit
+# Check the systemctl services and if one or more are failed, send an alert and exit
 services=$(sudo systemctl --failed | awk '{if (NR!=1) {print}}' | head -2)
 if [[ $services != *"0 loaded"* ]]; then
   message="Systemctl failed services: $services"
