@@ -5,7 +5,7 @@
 #
 # Require telegram bot and telegram user
 #
-# written by Alfio Salanitri <www.alfiosalanitri.it> and are licensed under the terms of the GNU General Public License, version 2 or higher.
+# written by Alfio Salanitri <www.alfiosalanitri.it> and are licensed under MIT license.
 
 
 # Read the config file
