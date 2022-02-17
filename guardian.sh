@@ -80,7 +80,7 @@ fi
 # Get the load average value and if is greather than core numbers+1 send an alert and exit
 load_avg=$(uptime | grep -ohe 'load average[s:][: ].*' | awk '{ print $3 }' | sed -e 's/,/./' | sed -e 's/,//' | awk '{print int($1)}')
 if [ $load_avg -gt $server_core ]; then
-  message="High CPU usage: $cpu_usage%"
+  message="High CPU usage: $load_avg%"
   send_message "$message"
 fi
 
