@@ -50,7 +50,7 @@ fi
 
 # title before the message
 telegram_title="Server \\- $server_name:"
-
+top_report_file="$current_path/top-report.txt"
 # function that send the message to telegram with curl
 function send_message() {
   # Check the send-alert.txt content, it prevents the message from being sent every minute 
@@ -66,7 +66,10 @@ function send_message() {
   fi
   # send the message and store the word no to txt file
   echo "no" > $alert_file
-  curl -s -X POST "https://api.telegram.org/bot$telegram_bot_token/sendMessage" -F chat_id=$telegram_user_chat_id -F text="$telegram_title \`$1\`" -F parse_mode="MarkdownV2"
+  curl -s -X POST "https://api.telegram.org/bot$telegram_bot_token/sendMessage" -F chat_id=$telegram_user_chat_id -F text="$telegram_title \`$1\` vedi il file log nel server" -F parse_mode="MarkdownV2"
+
+  # store top results to file
+  top -n1 -b > $top_report_file
   exit 1
 }
 
