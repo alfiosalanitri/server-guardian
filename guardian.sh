@@ -95,5 +95,5 @@ if [[ $services != *"0 loaded"* ]]; then
 fi
 
 echo "ok"
-exit 1
+exit 0
 
