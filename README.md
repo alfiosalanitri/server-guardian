@@ -1,6 +1,6 @@
 # server-guardian
-This is a simple bash script that monitor the server high cpu and ram usage and check the systemctl services status.
-If the ram or cpu usage is greather then limit or a service is failed, send a message to telegram user
+This is a simple bash script that monitor the server high cpu and ram usage, check the systemctl services status and the hard disk free space.
+If the ram or cpu usage is greather then limit or a service is failed or the disk usage is greather then limit, send a message to telegram user
 
 ## How to use
 - `sudo chown -R root: /path/to/server-guardian`
