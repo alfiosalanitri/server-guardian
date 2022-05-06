@@ -94,6 +94,15 @@ if [[ $services != *"0 loaded"* ]]; then
   send_message "$message"
 fi
 
+# Check the free disk space
+disk_space_perc_limit=$(awk -F'=' '/^disk_space_perc_limit=/ { print $2 }' $config_file)
+disk_partition_to_monitor=$(awk -F'=' '/^disk_partition_to_monitor=/ { print $2 }' $config_file)
+disk_perc_used=$(df -h $disk_partition_to_monitor | tail -n +2 | awk '{print $5}' | sed -E 's/%//gm;t;d')
+if [ "$disk_perc_used" -gt $disk_space_perc_limit ]; then
+  message="Hard disk full (space used $disk_perc_used%)"
+  send_message "$message"
+fi
+
 echo "ok"
 exit 0
 
