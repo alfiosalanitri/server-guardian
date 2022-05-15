@@ -66,10 +66,17 @@ function send_message() {
   fi
   # send the message and store the word no to txt file
   echo "no" > $alert_file
-  curl -s -X POST "https://api.telegram.org/bot$telegram_bot_token/sendMessage" -F chat_id=$telegram_user_chat_id -F text="$telegram_title \`$1\` vedi il file log nel server" -F parse_mode="MarkdownV2"
-
+  
+  telegram_message="\`$1\`"
+  
   # store top results to file
-  top -n1 -b > $top_report_file
+  if [ "yes" == $2 ]; then
+    top -n1 -b > $top_report_file
+    telegram_message="${telegram_message}. See top results here: $top_report_file"
+  fi
+  
+  curl -s -X POST "https://api.telegram.org/bot$telegram_bot_token/sendMessage" -F chat_id=$telegram_user_chat_id -F text="$telegram_title $telegram_message" -F parse_mode="MarkdownV2"
+
   exit 1
 }
 
@@ -77,21 +84,21 @@ function send_message() {
 ram_usage=$(free | awk '/Mem/{printf("RAM Usage: %.0f\n"), $3/$2*100}'| awk '{print $3}')
 if [ "$ram_usage" -gt $memory_perc_limit ]; then
   message="High RAM usage: $ram_usage%"
-  send_message "$message"
+  send_message "$message" "yes"
 fi
 
 # Get the load average value and if is greather than core numbers+1 send an alert and exit
 load_avg=$(uptime | grep -ohe 'load average[s:][: ].*' | awk '{ print $3 }' | sed -e 's/,/./' | sed -e 's/,//' | awk '{print int($1)}')
 if [ $load_avg -gt $server_core ]; then
   message="High CPU usage: $load_avg%"
-  send_message "$message"
+  send_message "$message" "yes"
 fi
 
 # Check the systemctl services and if one or more are failed, send an alert and exit
 services=$(sudo systemctl --failed | awk '{if (NR!=1) {print}}' | head -2)
 if [[ $services != *"0 loaded"* ]]; then
   message="Systemctl failed services: $services"
-  send_message "$message"
+  send_message "$message" "no"
 fi
 
 # Check the free disk space
@@ -99,7 +106,7 @@ disk_space_perc_limit=$(awk -F'=' '/^disk_space_perc_limit=/ { print $2 }' $conf
 disk_perc_used=$(df / --output=pcent | tr -cd 0-9)
 if [ "$disk_perc_used" -gt $disk_space_perc_limit ]; then
   message="Hard disk full (space used $disk_perc_used%)"
-  send_message "$message"
+  send_message "$message" "no"
 fi
 
 echo "ok"
