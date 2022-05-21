@@ -8,37 +8,37 @@
 # written by Alfio Salanitri <www.alfiosalanitri.it> and are licensed under MIT license.
 
 
-# Read the config file
+# Config
 current_path=$(pwd)
 config_file="$current_path/.config"
-if [ ! -f $config_file ]; then
-  printf "Sorry but the config file is required. \n"
-  exit 1
-fi
+top_report_file="$current_path/top-report.txt"
 
-# Read the send-alert.txt
 alert_filename="send-alert.txt"
 alert_file="$current_path/$alert_filename"
 send_alert=$(cat $alert_file)
 send_alert_every_minutes=$(awk -F'=' '/^send_alert_every_minutes=/ { print $2 }' $config_file)
+
+server_name=$(hostname | sed 's/-//g')
+memory_perc_limit=$(awk -F'=' '/^memory_perc_limit=/ { print $2 }' $config_file)
+disk_space_perc_limit=$(awk -F'=' '/^disk_space_perc_limit=/ { print $2 }' $config_file)
+
+telegram_bot_token=$(awk -F'=' '/^telegram_bot_token=/ { print $2 }' $config_file)
+telegram_user_chat_id=$(awk -F'=' '/^telegram_user_chat_id=/ { print $2 }' $config_file)
+telegram_title="Server \\- $server_name:"
+
+# Check required config variables
+if [ ! -f $config_file ]; then
+  printf "Sorry but the config file is required. \n"
+  exit 1
+fi
 if [ "" == "$send_alert_every_minutes" ]; then
   printf "Sorry but the send_alert_every_minutes variable is required.\n"
   exit 1
 fi
-
-# Server configs
-server_name=$(hostname | sed 's/-//g')
-server_core=$(grep ^cpu\\scores /proc/cpuinfo | uniq | awk '{print int($4)}')
-server_core=$(($server_core+1))
-memory_perc_limit=$(awk -F'=' '/^memory_perc_limit=/ { print $2 }' $config_file)
 if [ "" == "$memory_perc_limit" ]; then
   printf "Sorry but the memory_perc_limit variable is required.\n"
   exit 1
 fi
-
-# Get the telegram config and check if is filled
-telegram_bot_token=$(awk -F'=' '/^telegram_bot_token=/ { print $2 }' $config_file)
-telegram_user_chat_id=$(awk -F'=' '/^telegram_user_chat_id=/ { print $2 }' $config_file)
 if [ "" == "$telegram_bot_token" ]; then
   printf "Sorry but the telegram_bot_token variable is required.\n"
   exit 1
@@ -47,10 +47,6 @@ if [ "" == "$telegram_user_chat_id" ]; then
   printf "Sorry but the telegram_user_chat_id variable_ is required.\n"
   exit 1
 fi
-
-# title before the message
-telegram_title="Server \\- $server_name:"
-top_report_file="$current_path/top-report.txt"
 # function that send the message to telegram with curl
 function send_message() {
   # Check the send-alert.txt content, it prevents the message from being sent every minute 
@@ -87,11 +83,14 @@ if [ "$ram_usage" -gt $memory_perc_limit ]; then
   send_message "$message" "yes"
 fi
 
-# Get the load average value and if is greather than core numbers+1 send an alert and exit
-load_avg=$(uptime | grep -ohe 'load average[s:][: ].*' | awk '{ print $3 }' | sed -e 's/,/./' | sed -e 's/,//' | awk '{print int($1)}')
-if [ $load_avg -gt $server_core ]; then
-  message="High CPU usage: $load_avg%"
-  send_message "$message" "yes"
+# Get the load average value and if is greather than 100% send an alert and exit
+server_core=$(grep ^cpu\\scores /proc/cpuinfo | uniq | awk '{print int($4)}')
+load_avg=$(uptime | grep -ohe 'load average[s:][: ].*')
+load_avg_last_minute=$(uptime | grep -ohe 'load average[s:][: ].*' | awk '{ print $3 }' | sed -e 's/,/./' | sed -e 's/,//' | awk '{print int($1)}')
+load_avg_percentage=$(($load_avg_last_minute * 100 / $server_core))
+if [ $load_avg_percentage -gt 100 ]; then
+  message="High CPU usage: $load_avg_percentage% - $load_avg (1min, 5min, 15min)"
+  echo $message
 fi
 
 # Check the systemctl services and if one or more are failed, send an alert and exit
@@ -102,7 +101,7 @@ if [[ $services != *"0 loaded"* ]]; then
 fi
 
 # Check the free disk space
-disk_space_perc_limit=$(awk -F'=' '/^disk_space_perc_limit=/ { print $2 }' $config_file)
+
 disk_perc_used=$(df / --output=pcent | tr -cd 0-9)
 if [ "$disk_perc_used" -gt $disk_space_perc_limit ]; then
   message="Hard disk full (space used $disk_perc_used%)"
