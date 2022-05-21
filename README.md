@@ -4,7 +4,7 @@ If the ram or cpu usage is greather then limit or a service is failed or the dis
 
 ## How to use
 - `sudo chown -R root:root /path/to/server-guardian`
-- `sudo mv /path/to/server-guardian/.config.demo /path/to/server-guardian/.config` 
+- `sudo cp /path/to/server-guardian/.config.demo /path/to/server-guardian/.config` 
 - edit .config file and type your telegram bot key and chat or adjust the options
 - `sudo chmod 600 /path/to/server-guardian/.config`
 - `sudo chmod 640 /path/to/server-guardian/send-alert.txt`
