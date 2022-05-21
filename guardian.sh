@@ -7,7 +7,6 @@
 #
 # written by Alfio Salanitri <www.alfiosalanitri.it> and are licensed under MIT license.
 
-
 # Config
 current_path=$(pwd)
 config_file="$current_path/.config"
@@ -101,7 +100,6 @@ if [[ $services != *"0 loaded"* ]]; then
 fi
 
 # Check the free disk space
-
 disk_perc_used=$(df / --output=pcent | tr -cd 0-9)
 if [ "$disk_perc_used" -gt $disk_space_perc_limit ]; then
   message="Hard disk full (space used $disk_perc_used%)"
