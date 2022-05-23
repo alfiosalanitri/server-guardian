@@ -106,6 +106,6 @@ if [ "$disk_perc_used" -gt $disk_space_perc_limit ]; then
   send_message "$message" "no"
 fi
 
-echo "ok"
+echo "it's all right."
 exit 0
 
