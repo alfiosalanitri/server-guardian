@@ -83,7 +83,7 @@ if [ "$ram_usage" -gt $memory_perc_limit ]; then
 fi
 
 # Get the load average value and if is greather than 100% send an alert and exit
-server_core=$(grep ^cpu\\scores /proc/cpuinfo | uniq | awk '{print int($4)}')
+server_core=$(lscpu | grep '^CPU(s)' | awk '{print int($2)}')
 load_avg=$(uptime | grep -ohe 'load average[s:][: ].*')
 load_avg_last_minute=$(uptime | grep -ohe 'load average[s:][: ].*' | awk '{ print $3 }' | sed -e 's/,/./' | sed -e 's/,//' | awk '{print int($1)}')
 load_avg_percentage=$(($load_avg_last_minute * 100 / $server_core))
