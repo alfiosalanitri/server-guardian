@@ -61,11 +61,6 @@ exit 0
 }
 # send the message to telegram with curl
 send_message() {
-
-  if [ "1" == $debug ]; then
-    echo $1
-    exit 0
-  fi
   # Check the send-alert.txt content, it prevents the message from being sent every minute 
   if [ "no" == "$send_alert" ]; then
     # Get the file edit time and current time, if elapsed minutes is greater than config variable, save the word yes to file to send another message on next cron check.
@@ -96,7 +91,6 @@ send_message() {
 ##########################
 # Default options
 ##########################
-debug=1
 server_name=$(hostname | sed 's/-//g')
 current_path=$(pwd)
 top_report_file="$current_path/top-report.txt"
