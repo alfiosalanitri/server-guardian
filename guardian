@@ -75,12 +75,12 @@ send_message() {
   # send the message and store the word no to txt file
   echo "no" > $alert_file
   
-  telegram_message="\`$1\`"
+  telegram_message="\`$(echo "$1" | sed "s/\./-/g")\`"
   
   # store top results to file
   if [ "yes" == $2 ]; then
     top -n1 -b > $top_report_file
-    telegram_message="${telegram_message}. See top results here: $top_report_file"
+
   fi
   
   curl -s -X POST "https://api.telegram.org/bot$telegram_bot_token/sendMessage" -F chat_id=$telegram_user_chat_id -F text="$telegram_title $telegram_message" -F parse_mode="MarkdownV2"
@@ -91,7 +91,7 @@ send_message() {
 ##########################
 # Default options
 ##########################
-server_name=$(hostname | sed 's/-//g')
+server_name=$(hostname)
 current_path=$(pwd)
 top_report_file="$current_path/top-report.txt"
 alert_filename="send-alert.txt"
@@ -106,7 +106,7 @@ memory_perc_limit=""
 watch_services=""
 watch_hard_disk=""
 disk_space_perc_limit=""
-telegram_title="Server \\- $server_name:"
+telegram_title="\[ Server \`$server_name\` \] \\-\\-"
 telegram_variable_token="telegram_bot_token"
 telegram_variable_chatid="telegram_user_chat_id"
 
