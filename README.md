@@ -12,10 +12,10 @@ If the ram or cpu usage is greather then limit or a service is failed or the dis
 - `sudo crontab -e`
 - `* * * * * cd /path/to/server-guardian/ && ./guardian > /dev/null 2>&1`
 
-## Advanced Use
+## Advanced Use (override .config file values)
 - `* * * * * cd /path/to/server-guardian/ && ./guardian --warn-every 30 --watch-services 0 --watch-cpu 1 --watch-ram 1 --watch-hard-disk 0 --cpu-warning-level high --memory-limit 60 --disk-space-limit 80 --config /home/my-custom/.config --config-telegram-variable-token TELEGRAM_TOKEN_CUSTOM_NAME --config-telegram-variable-chatid TELEGRAM_CHAT_ID_CUSTOM_NAME > /dev/null 2>&1`
 
-**Note**: when you pass an option, this will overrides the default value stored into config file.
+**Note**: when you pass an option, this will overrides the default value stored in the config file.
 
 ### Options
 `--warn-every` Minutes number between each alert
