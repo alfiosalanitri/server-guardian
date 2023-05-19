@@ -96,7 +96,13 @@ current_path=$(pwd)
 top_report_file="$current_path/top-report.txt"
 alert_filename="send-alert.txt"
 alert_file="$current_path/$alert_filename"
-echo "yes" > $alert_file
+#create the alert and top report file only the first time
+if [ ! -f $alert_file ]; then
+  echo "yes" > $alert_file
+fi
+if [ ! -f $top_report_file ]; then
+  echo "" > $top_report_file
+fi
 send_alert=$(cat $alert_file)
 config_file=""
 send_alert_every_minutes=""
