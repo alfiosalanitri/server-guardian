@@ -70,12 +70,14 @@ send_message() {
     if [ $minutes_elapsed -gt $send_alert_every_minutes ]; then
       echo "yes" > $alert_file
       echo "Ready for send an alert."
+      exit 0
     fi
+    echo "Message already sent. The next one will be sent in $send_alert_every_minutes minutes." 
     exit 0
   fi
   # send the message and store the word no to txt file
   echo "no" > $alert_file
-  echo "Alert already sent. The next one will be sent in $send_alert_every_minutes minutes." 
+  echo "Ok the message has been sent. The next one will be sent in $send_alert_every_minutes minutes." 
   
   telegram_message="\`$(echo "$1" | sed "s/\./-/g")\`"
   
