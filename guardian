@@ -72,8 +72,8 @@ send_message() {
       echo "Ready for send an alert."
       exit 0
     fi
-    minutes_for_next_alert=$(($send_alert_every_minutes - $minutes_elapsed))
-    echo "The sessage has been sent $minutes_elapsed minutes ago. The next one will be sent in $minutes_for_next_alert minutes." 
+    minutes_to_next_alert=$(($send_alert_every_minutes - $minutes_elapsed))
+    echo "The sessage has been sent $minutes_elapsed minutes ago. The next one will be sent in $minutes_to_next_alert minutes." 
     exit 0
   fi
   # send the message and store the word no to txt file
