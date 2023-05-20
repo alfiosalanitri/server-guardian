@@ -97,7 +97,7 @@ send_message() {
 
 # test if telegram api works
 send_test_message() {
-  curl -s -X POST "https://api.telegram.org/bot$telegram_bot_token/sendMessage" -F chat_id=$telegram_user_chat_id -F text="Ok the server guardian is working." -F parse_mode="MarkdownV2"
+  curl -s -X POST "https://api.telegram.org/bot$telegram_bot_token/sendMessage" -F chat_id=$telegram_user_chat_id -F text="Ok the server guardian is working."
   exit 0
 }
 
