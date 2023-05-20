@@ -43,4 +43,6 @@ If the ram or cpu usage is greather then limit or a service is failed or the dis
     
 `--config-telegram-variable-chatid` the chat id variable name (not the id) stored in custom config file (ex: TELEGRAM_CHAT_ID_CUSTOM_NAME)
     
+`--test` test if the bot is working
+
 `-h, --help` show this help
