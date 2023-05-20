@@ -129,6 +129,7 @@ disk_space_perc_limit=""
 telegram_title="\[ Server \`$server_name\` \] \\-\\-"
 telegram_variable_token="telegram_bot_token"
 telegram_variable_chatid="telegram_user_chat_id"
+send_test="no"
 
 ##########################
 # Get options from cli
@@ -139,7 +140,7 @@ while [ $# -gt 0 ] ; do
       display_help 
       ;;
     --test) 
-      send_test_message 
+      send_test="yes"
       ;;
     --warn-every)
       send_alert_every_minutes=$2 
@@ -316,6 +317,11 @@ if [ "1" == "$watch_hard_disk" ]; then
     message="Hard disk full (space used $disk_perc_used%)"
     send_message "$message" "no"
   fi
+fi
+
+# check if bot works
+if [ "yes" == "$send_test" ]; then
+  send_test_message
 fi
 
 echo "it's all right."
