@@ -135,8 +135,12 @@ telegram_variable_chatid="telegram_user_chat_id"
 ##########################
 while [ $# -gt 0 ] ; do
   case $1 in
-    -h | --help) display_help ;;
-    --test) send_test_message;;
+    -h | --help) 
+      display_help 
+      ;;
+    --test) 
+      send_test_message 
+      ;;
     --warn-every)
       send_alert_every_minutes=$2 
       ;;
