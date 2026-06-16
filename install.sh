@@ -1,7 +1,7 @@
 #!/bin/bash
-# Installs server-guardian as a systemd timer that runs every minute.
-# Symlinks the service and timer units into /etc/systemd/system/ so updates
-# to the repo are picked up without re-running the installer.
+# Installs server-guardian.
+# Uses a systemd timer if systemd is the running init system,
+# otherwise falls back to a root crontab entry (every minute).
 
 set -euo pipefail
 
@@ -12,6 +12,7 @@ NC='\033[0m'
 
 INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SYSTEMD_SYSTEM_DIR="/etc/systemd/system"
+CRON_ENTRY="* * * * * cd $INSTALL_DIR && $INSTALL_DIR/guardian.sh > /dev/null 2>&1"
 
 info()    { printf "${GREEN}[+]${NC} %s\n" "$*"; }
 warning() { printf "${YELLOW}[!]${NC} %s\n" "$*"; }
@@ -35,9 +36,12 @@ if [ ! -f "$INSTALL_DIR/.config" ]; then
 fi
 chmod 600 "$INSTALL_DIR/.config"
 
-# Generate the service file (contains the absolute install path, so not committed)
-mkdir -p "$INSTALL_DIR/systemd"
-cat > "$INSTALL_DIR/systemd/guardian.service" <<EOF
+# Install the scheduler
+if [ -d /run/systemd/system ]; then
+
+  # --- systemd ---
+  mkdir -p "$INSTALL_DIR/systemd"
+  cat > "$INSTALL_DIR/systemd/guardian.service" <<EOF
 [Unit]
 Description=Server Guardian - monitor CPU, RAM, services and disk
 After=network.target
@@ -50,20 +54,30 @@ ExecStart=$INSTALL_DIR/guardian.sh
 StandardOutput=null
 StandardError=null
 EOF
-info "Generated systemd/guardian.service"
+  info "Generated systemd/guardian.service"
 
-# Symlink both units into /etc/systemd/system/
-ln -sf "$INSTALL_DIR/systemd/guardian.service" "$SYSTEMD_SYSTEM_DIR/guardian.service"
-ln -sf "$INSTALL_DIR/systemd/guardian.timer"   "$SYSTEMD_SYSTEM_DIR/guardian.timer"
-info "Symlinked units to $SYSTEMD_SYSTEM_DIR"
+  ln -sf "$INSTALL_DIR/systemd/guardian.service" "$SYSTEMD_SYSTEM_DIR/guardian.service"
+  ln -sf "$INSTALL_DIR/systemd/guardian.timer"   "$SYSTEMD_SYSTEM_DIR/guardian.timer"
+  info "Symlinked units to $SYSTEMD_SYSTEM_DIR"
 
-# Enable and start
-systemctl daemon-reload
-systemctl enable --now guardian.timer
-info "Timer enabled and started"
+  systemctl daemon-reload
+  systemctl enable --now guardian.timer
+  info "Timer enabled and started"
+
+  SCHEDULER_STATUS="systemctl status guardian.timer"
+
+else
+
+  # --- crontab fallback ---
+  ( crontab -l 2>/dev/null | grep -v "guardian.sh"; echo "$CRON_ENTRY" ) | crontab -
+  info "Cron job added to root crontab (every minute)"
+
+  SCHEDULER_STATUS="crontab -l"
+
+fi
 
 printf "\n"
 info "Installation complete."
-printf "  Config file : %s/.config\n"    "$INSTALL_DIR"
-printf "  Test the bot: sudo %s/guardian.sh --test\n" "$INSTALL_DIR"
-printf "  Timer status: systemctl status guardian.timer\n"
+printf "  Config file  : %s/.config\n"    "$INSTALL_DIR"
+printf "  Test the bot : sudo %s/guardian.sh --test\n" "$INSTALL_DIR"
+printf "  Check status : %s\n" "$SCHEDULER_STATUS"
