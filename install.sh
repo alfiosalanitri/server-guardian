@@ -25,6 +25,7 @@ info "Installing server-guardian from $INSTALL_DIR"
 # Ownership and permissions
 chown -R root:root "$INSTALL_DIR"
 chmod 754 "$INSTALL_DIR/guardian.sh"
+touch "$INSTALL_DIR/send-alert.txt" "$INSTALL_DIR/top-report.txt"
 chmod 640 "$INSTALL_DIR/send-alert.txt"
 chmod 644 "$INSTALL_DIR/top-report.txt"
 info "Permissions set"
