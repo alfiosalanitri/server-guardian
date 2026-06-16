@@ -1,4 +1,11 @@
-.PHONY: install uninstall test
+.PHONY: help install uninstall test
+
+help:
+	@echo "Usage: make <target>"
+	@echo ""
+	@echo "  install    Install server-guardian and enable the scheduler"
+	@echo "  uninstall  Remove server-guardian from the scheduler"
+	@echo "  test       Run the test suite"
 
 install:
 	@sudo bash install.sh
