@@ -97,7 +97,12 @@ send_message() {
 
 # test if telegram api works
 send_test_message() {
-  curl -s -X POST "https://api.telegram.org/bot$telegram_bot_token/sendMessage" -F chat_id=$telegram_user_chat_id -F text="$telegram_title Ok the server guardian is working" -F parse_mode="MarkdownV2"
+  response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "https://api.telegram.org/bot$telegram_bot_token/sendMessage" -F chat_id=$telegram_user_chat_id -F text="$telegram_title Ok the server guardian is working" -F parse_mode="MarkdownV2")
+  if [ "$response" != "200" ]; then
+    printf "Error: Telegram API returned HTTP $response. Check your bot token and chat ID.\n"
+    exit 1
+  fi
+  echo "Test message sent successfully."
   exit 0
 }
 
@@ -194,6 +199,18 @@ if [ ! -f $config_file ]; then
   exit 1
 fi
 
+# When only testing the bot, supply defaults so monitoring validation is skipped
+if [ "yes" == "$send_test" ]; then
+  send_alert_every_minutes="${send_alert_every_minutes:-60}"
+  watch_cpu="${watch_cpu:-0}"
+  cpu_warning_level="${cpu_warning_level:-medium}"
+  watch_ram="${watch_ram:-0}"
+  memory_perc_limit="${memory_perc_limit:-80}"
+  watch_services="${watch_services:-0}"
+  watch_hard_disk="${watch_hard_disk:-0}"
+  disk_space_perc_limit="${disk_space_perc_limit:-80}"
+fi
+
 if [ "" == "$send_alert_every_minutes" ]; then
   send_alert_every_minutes=$(awk -F'=' '/^send_alert_every_minutes=/ { print $2 }' $config_file)
 fi
@@ -256,15 +273,19 @@ if [ "" == "$disk_space_perc_limit" ] && [ "1" == "$watch_hard_disk" ]; then
 fi
 
 # Check telegram bot key and chat id
-telegram_bot_token=$(awk -F'=' '/^'$telegram_variable_token'=/ { print $2 }' $config_file)
+telegram_bot_token=$(awk -F'=' -v k="$telegram_variable_token" '$1 == k { print $2 }' "$config_file")
 if [ "" == "$telegram_bot_token" ]; then
   printf "The variable $telegram_variable_token not exists into config file or is empty.\n"
   exit 1
 fi
-telegram_user_chat_id=$(awk -F'=' '/^'$telegram_variable_chatid'=/ { print $2 }' $config_file)
+telegram_user_chat_id=$(awk -F'=' -v k="$telegram_variable_chatid" '$1 == k { print $2 }' "$config_file")
 if [ "" == "$telegram_user_chat_id" ]; then
-  printf "The variable $telegram_user_chat_id not exists into config file or is empty.\n"
+  printf "The variable $telegram_variable_chatid not exists into config file or is empty.\n"
   exit 1
+fi
+
+if [ "yes" == "$send_test" ]; then
+  send_test_message
 fi
 
 
@@ -285,10 +306,12 @@ if [ "1" == "$watch_cpu" ]; then
       ;;
   esac
   load_avg_for_minutes=$(uptime | grep -ohe 'load average[s:][: ].*' | awk '{ print '$avg_position'}' | sed -e 's/,/./' | sed -e 's/,//' | awk '{print int($1)}')
-  load_avg_percentage=$(($load_avg_for_minutes * 100 / $server_core))
-  if [ $load_avg_percentage -ge 100 ]; then
-    message="High CPU usage: $load_avg_percentage% - $load_avg (1min, 5min, 15min)"
-    send_message "$message" "yes"
+  if [ -n "$server_core" ] && [ "$server_core" -gt 0 ]; then
+    load_avg_percentage=$(($load_avg_for_minutes * 100 / $server_core))
+    if [ $load_avg_percentage -ge 100 ]; then
+      message="High CPU usage: $load_avg_percentage% - $load_avg (1min, 5min, 15min)"
+      send_message "$message" "yes"
+    fi
   fi
 fi
 
@@ -317,11 +340,6 @@ if [ "1" == "$watch_hard_disk" ]; then
     message="Hard disk full (space used $disk_perc_used%)"
     send_message "$message" "no"
   fi
-fi
-
-# check if bot works
-if [ "yes" == "$send_test" ]; then
-  send_test_message
 fi
 
 echo "it's all right."
