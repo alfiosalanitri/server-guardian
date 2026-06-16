@@ -1,0 +1,10 @@
+[Unit]
+Description=Run server-guardian every minute
+
+[Timer]
+OnBootSec=1min
+OnCalendar=minutely
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

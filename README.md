@@ -1,48 +1,182 @@
 # server-guardian
-This is a simple bash script that monitor the server high cpu and ram usage, check the systemctl services status and the hard disk free space.
-If the ram or cpu usage is greather then limit or a service is failed or the disk usage is greather then limit, send a message to telegram user
 
-## How to use
-- `sudo chown -R root:root /path/to/server-guardian`
-- `sudo cp /path/to/server-guardian/.config.demo /path/to/server-guardian/.config` 
-- edit .config file and type your telegram bot key and chat or adjust the options
-- `sudo chmod 600 /path/to/server-guardian/.config`
-- `sudo chmod 640 /path/to/server-guardian/send-alert.txt`
-- `sudo chmod 754 /path/to/server-guardian/guardian`
-- `sudo crontab -e`
-- `* * * * * cd /path/to/server-guardian/ && ./guardian > /dev/null 2>&1`
+A bash script that monitors server health and sends Telegram alerts when:
 
-## Advanced Use (override .config file values)
-- `* * * * * cd /path/to/server-guardian/ && ./guardian --warn-every 30 --watch-services 0 --watch-cpu 1 --watch-ram 1 --watch-hard-disk 0 --cpu-warning-level high --memory-limit 60 --disk-space-limit 80 --config /home/my-custom/.config --config-telegram-variable-token TELEGRAM_TOKEN_CUSTOM_NAME --config-telegram-variable-chatid TELEGRAM_CHAT_ID_CUSTOM_NAME > /dev/null 2>&1`
+- CPU load average exceeds the number of cores
+- RAM usage exceeds a configured threshold
+- A systemd service has failed
+- Disk usage exceeds a configured threshold
 
-**Note**: when you pass an option, this will overrides the default value stored in the config file.
+---
 
-### Options
-`--warn-every` Minutes number between each alert
-    
-`--watch-cpu` 1 to enable or 0 to disable the high cpu usage
-    
-`--watch-ram` 1 to enable or 0 to disable the high ram usage
-    
-`--watch-services` 1 to enable or 0 to disable the services failed alert
-    
-`--watch-hard-disk` 1 to enable or 0 to disable the hard disk free space alert
-    
-`--cpu-warning-level` 
-- **high**: to receive an alert if the load average of last minute is greater than cpu core number. 
-- **medium**: watch the value of the latest 5 minutes. (default)
-- **low**: watch the value of the latest 15 minuts.
-    
-`--memory-limit` Memory percentage limit
-    
-`--disk-space-limit` disk space percentage limit
-    
-`--config` path to custom config file with telegram bot key and telegram chat id options
-    
-`--config-telegram-variable-token` the token variable name (not the token key) stored in custom config file (ex: TELEGRAM_TOKEN_CUSTOM_NAME)
-    
-`--config-telegram-variable-chatid` the chat id variable name (not the id) stored in custom config file (ex: TELEGRAM_CHAT_ID_CUSTOM_NAME)
-    
-`--test` test if the bot is working
+## Requirements
 
-`-h, --help` show this help
+- `bash`, `curl`, `systemd`
+- A Telegram bot token and chat ID ([how to create a bot](https://core.telegram.org/bots#how-do-i-create-a-bot))
+
+---
+
+## Install
+
+### 1. Clone the repository to a permanent location
+
+```bash
+sudo git clone https://github.com/alfiosalanitri/server-guardian /opt/server-guardian
+cd /opt/server-guardian
+```
+
+> The repository must stay at this path after installation — the systemd units are symlinked directly from it.
+
+### 2. Configure your Telegram credentials
+
+```bash
+sudo cp .config.demo .config
+sudo nano .config
+```
+
+Fill in `telegram_bot_token` and `telegram_user_chat_id`. Adjust the monitoring thresholds as needed (see [Configuration](#configuration) below).
+
+### 3. Run the installer
+
+```bash
+sudo make install
+```
+
+This will:
+
+1. Set ownership (`root:root`) and file permissions
+2. Generate `systemd/guardian.service` with the correct install path
+3. Symlink both units into `/etc/systemd/system/`
+4. Enable and start the `guardian.timer` (runs every minute)
+
+### 4. Verify the installation
+
+```bash
+# Check the timer is active
+systemctl status guardian.timer
+
+# Send a test message to your Telegram chat
+sudo /opt/server-guardian/guardian.sh --test
+```
+
+---
+
+## Uninstall
+
+```bash
+sudo make uninstall
+```
+
+Stops and disables the timer, removes the symlinks from `/etc/systemd/system/`, and reloads systemd. The repository directory is left untouched.
+
+---
+
+## Configuration
+
+Options can be set in `.config` or overridden at runtime via CLI flags. CLI flags always take precedence.
+
+### .config variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `telegram_bot_token` | Telegram bot token | _(required)_ |
+| `telegram_user_chat_id` | Telegram chat ID | _(required)_ |
+| `send_alert_every_minutes` | Minimum minutes between repeated alerts | 60 |
+| `watch_cpu` | `1` to monitor CPU, `0` to skip | — |
+| `cpu_warning_level` | `high` (1 min avg), `medium` (5 min avg), `low` (15 min avg) | `medium` |
+| `watch_ram` | `1` to monitor RAM, `0` to skip | — |
+| `memory_perc_limit` | RAM usage percentage threshold | — |
+| `watch_services` | `1` to monitor failed systemd services, `0` to skip | — |
+| `watch_hard_disk` | `1` to monitor disk space, `0` to skip | — |
+| `disk_space_perc_limit` | Disk usage percentage threshold | — |
+
+### CLI flags
+
+| Flag | Description |
+|---|---|
+| `--warn-every N` | Minutes between repeated alerts |
+| `--watch-cpu 0\|1` | Enable/disable CPU monitoring |
+| `--watch-ram 0\|1` | Enable/disable RAM monitoring |
+| `--watch-services 0\|1` | Enable/disable failed service monitoring |
+| `--watch-hard-disk 0\|1` | Enable/disable disk monitoring |
+| `--cpu-warning-level high\|medium\|low` | CPU alert sensitivity |
+| `--memory-limit N` | RAM percentage threshold |
+| `--disk-space-limit N` | Disk percentage threshold |
+| `--config /path` | Path to a custom config file |
+| `--config-telegram-variable-token NAME` | Variable name for the bot token in a custom config |
+| `--config-telegram-variable-chatid NAME` | Variable name for the chat ID in a custom config |
+| `--test` | Send a test message to verify the bot is working |
+| `-h, --help` | Show help |
+
+### Advanced example: custom config with CLI overrides
+
+```bash
+sudo /opt/server-guardian/guardian.sh \
+  --warn-every 30 \
+  --watch-cpu 1 --cpu-warning-level high \
+  --watch-ram 1 --memory-limit 60 \
+  --watch-services 0 \
+  --watch-hard-disk 0 \
+  --config /home/myuser/.guardian.conf \
+  --config-telegram-variable-token MY_TELEGRAM_TOKEN \
+  --config-telegram-variable-chatid MY_CHAT_ID
+```
+
+---
+
+## Systemd units
+
+The timer fires every minute (`OnCalendar=minutely`), matching the original crontab schedule.
+
+**`systemd/guardian.timer`** — committed to the repository:
+
+```ini
+[Unit]
+Description=Run server-guardian every minute
+
+[Timer]
+OnBootSec=1min
+OnCalendar=minutely
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
+```
+
+**`systemd/guardian.service`** — generated by `install.sh` (not committed, contains the absolute install path):
+
+```ini
+[Unit]
+Description=Server Guardian - monitor CPU, RAM, services and disk
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/server-guardian
+ExecStart=/opt/server-guardian/guardian.sh
+StandardOutput=null
+StandardError=null
+```
+
+Both files are symlinked into `/etc/systemd/system/` by the installer so updates to the repository are picked up automatically without re-running `install.sh`.
+
+---
+
+## Test
+
+### Test the Telegram bot connection
+
+```bash
+sudo /opt/server-guardian/guardian.sh --test
+```
+
+Sends a test message and exits 0 on success, exits 1 with a diagnostic if the Telegram API returns an error.
+
+### Run the automated test suite
+
+```bash
+make test
+```
+
+16 tests covering all monitoring paths and edge cases. Each test runs in an isolated temporary directory using stubbed system commands (`curl`, `lscpu`, `uptime`, `free`, `df`, `systemctl`) — no real Telegram credentials or server resources required.

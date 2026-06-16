@@ -1,3 +1,4 @@
 .vscode
 .config
 *.txt
+systemd/guardian.service

@@ -3,7 +3,7 @@
 # Each test runs in an isolated tmp dir with stubbed system commands
 # (curl, lscpu, uptime, free, df, systemctl, sudo) injected via PATH.
 
-GUARDIAN="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/guardian"
+GUARDIAN="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/guardian.sh"
 PASS=0
 FAIL=0
 
