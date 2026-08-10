@@ -1,4 +1,4 @@
-.PHONY: help install uninstall test
+.PHONY: help install uninstall test release
 
 help:
 	@echo "Usage: make <target>"
@@ -6,6 +6,7 @@ help:
 	@echo "  install    Interactively configure and install server-guardian (run with sudo)"
 	@echo "  uninstall  Remove server-guardian from the scheduler"
 	@echo "  test       Run the test suite"
+	@echo "  release    Tag a new release (suggests a semver bump, pushes the tag)"
 
 install:
 	@bash install.sh
@@ -24,3 +25,6 @@ uninstall:
 
 test:
 	@bash tests/guardian.test.sh
+
+release:
+	@bash release.sh
