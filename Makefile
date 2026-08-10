@@ -3,12 +3,12 @@
 help:
 	@echo "Usage: make <target>"
 	@echo ""
-	@echo "  install    Install server-guardian and enable the scheduler"
+	@echo "  install    Interactively configure and install server-guardian (run with sudo)"
 	@echo "  uninstall  Remove server-guardian from the scheduler"
 	@echo "  test       Run the test suite"
 
 install:
-	@sudo bash install.sh
+	@bash install.sh
 
 uninstall:
 	@if [ -d /run/systemd/system ]; then \

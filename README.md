@@ -18,38 +18,43 @@ A bash script that monitors server health and sends Telegram alerts when:
 
 ## Install
 
-### 1. Clone the repository to a permanent location
+### 1. Download and extract the latest release
 
 ```bash
-sudo git clone https://github.com/alfiosalanitri/server-guardian /opt/server-guardian
+curl -LO https://github.com/alfiosalanitri/server-guardian/releases/latest/download/server-guardian.tar.gz
+tar -xzf server-guardian.tar.gz
+sudo mv server-guardian-v*/ /opt/server-guardian
 cd /opt/server-guardian
 ```
 
-> The repository must stay at this path after installation — the systemd units are symlinked directly from it.
+> The extracted folder must stay at this path after installation — the systemd units are symlinked directly from it.
 
-### 2. Configure your Telegram credentials
-
-```bash
-sudo cp .config.demo .config
-sudo nano .config
-```
-
-Fill in `telegram_bot_token` and `telegram_user_chat_id`. Adjust the monitoring thresholds as needed (see [Configuration](#configuration) below).
-
-### 3. Run the installer
+### 2. Run the installer
 
 ```bash
 sudo make install
 ```
 
-This will:
+`install.sh` refuses to run without root — `make install` (without `sudo`) stops immediately with an error.
 
-1. Set ownership (`root:root`) and file permissions
-2. Generate `systemd/guardian.service` with the correct install path
-3. Symlink both units into `/etc/systemd/system/`
-4. Enable and start the `guardian.timer` (runs every minute)
+The installer is interactive and will ask you, one step at a time:
 
-### 4. Verify the installation
+- Telegram bot token and chat id ([how to create a bot](https://core.telegram.org/bots#how-do-i-create-a-bot))
+- Minutes between repeated alerts
+- Whether to monitor CPU, RAM, systemd services and disk space, and their thresholds
+
+Your answers are written to `.env` (`chmod 600`, root-only). Re-running `sudo make install` later detects the existing `.env` and asks whether to reconfigure it, so upgrades don't require answering the questions again.
+
+> Upgrading from an install that predates this file? If a `.config` from a previous version is found and no `.env` exists yet, the installer migrates it to `.env` automatically — no need to re-enter your Telegram credentials.
+
+Besides writing `.env`, the installer also:
+
+1. Sets ownership (`root:root`) and file permissions
+2. Generates `systemd/guardian.service` with the correct install path
+3. Symlinks both units into `/etc/systemd/system/`
+4. Enables and starts the `guardian.timer` (runs every minute)
+
+### 3. Verify the installation
 
 ```bash
 # Check the timer is active
@@ -73,9 +78,9 @@ Stops and disables the timer, removes the symlinks from `/etc/systemd/system/`, 
 
 ## Configuration
 
-Options can be set in `.config` or overridden at runtime via CLI flags. CLI flags always take precedence.
+Options can be set in `.env` (written interactively by `sudo make install`) or overridden at runtime via CLI flags. CLI flags always take precedence.
 
-### .config variables
+### .env variables
 
 | Variable | Description | Default |
 |---|---|---|

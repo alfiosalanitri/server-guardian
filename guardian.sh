@@ -192,7 +192,15 @@ done
 # Check options and config
 ##########################
 if [ "" == "$config_file" ]; then
-  config_file="$current_path/.config"
+  # .env is the current default; fall back to the legacy .config name
+  # for installs that predate the .env rename.
+  if [ -f "$current_path/.env" ]; then
+    config_file="$current_path/.env"
+  elif [ -f "$current_path/.config" ]; then
+    config_file="$current_path/.config"
+  else
+    config_file="$current_path/.env"
+  fi
 fi
 if [ ! -f $config_file ]; then
   printf "Sorry but the config file is required. \n"

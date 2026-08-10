@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build release archive
+        run: |
+          set -euo pipefail
+          stage="server-guardian-${GITHUB_REF_NAME}"
+          mkdir "$stage"
+          cp -r guardian.sh install.sh Makefile README.md LICENSE .env.demo systemd "$stage/"
+          tar -czf server-guardian.tar.gz "$stage"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            server-guardian.tar.gz \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
