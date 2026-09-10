@@ -82,6 +82,8 @@ configure() {
     disk_space_perc_limit="80"
   fi
 
+  ask_yn watch_supervisor "Monitor supervisor (supervisorctl) failed processes?" "n"
+
   cat > "$ENV_FILE" <<EOF
 telegram_bot_token=$telegram_bot_token
 telegram_user_chat_id=$telegram_user_chat_id
@@ -93,6 +95,7 @@ watch_cpu=$watch_cpu
 watch_ram=$watch_ram
 watch_services=$watch_services
 watch_hard_disk=$watch_hard_disk
+watch_supervisor=$watch_supervisor
 EOF
   chmod 600 "$ENV_FILE"
   echo ""

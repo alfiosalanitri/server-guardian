@@ -15,24 +15,27 @@ cat << EOF
 Copyright (C) 2022 by Alfio Salanitri
 Website: https://github.com/alfiosalanitri/server-guardian
 
-Usage: $(basename $0) --warn-every 60 --watch-services 1 --watch-cpu 1 --watch-ram 1 --watch-hard-disk 1 --cpu-warning-level low --memory-limit 70 --disk-space-limit 80 --config /path/to/.custom-config --config-telegram-variable-token TELEGRAM_TOKEN --config-telegram-variable-chatid CHAT_ID
+Usage: $(basename $0) --warn-every 60 --watch-services 1 --watch-cpu 1 --watch-ram 1 --watch-hard-disk 1 --watch-supervisor 1 --cpu-warning-level low --memory-limit 70 --disk-space-limit 80 --config /path/to/.custom-config --config-telegram-variable-token TELEGRAM_TOKEN --config-telegram-variable-chatid CHAT_ID
 
 Options
 --warn-every
     Minutes number between each alert
-    
+
 --watch-cpu
     1 to enable or 0 to disable the high cpu usage
-    
+
 --watch-ram
     1 to enable or 0 to disable the high ram usage
-    
+
 --watch-services
     1 to enable or 0 to disable the services failed alert
-    
+
 --watch-hard-disk
     1 to enable or 0 to disable the hard disk free space alert
-    
+
+--watch-supervisor
+    1 to enable or 0 to disable the supervisor failed processes alert
+
 --cpu-warning-level
     high: to receive an alert if the load average of last minute is greater than cpu core number. 
     medium: watch the value of the latest 5 minutes. (default)
@@ -131,6 +134,7 @@ memory_perc_limit=""
 watch_services=""
 watch_hard_disk=""
 disk_space_perc_limit=""
+watch_supervisor=""
 telegram_title="\[ Server \`$server_name\` \] \\-\\-"
 telegram_variable_token="telegram_bot_token"
 telegram_variable_chatid="telegram_user_chat_id"
@@ -160,7 +164,10 @@ while [ $# -gt 0 ] ; do
       watch_services=$2 
       ;;
     --watch-hard-disk)
-      watch_hard_disk=$2 
+      watch_hard_disk=$2
+      ;;
+    --watch-supervisor)
+      watch_supervisor=$2
       ;;
     --cpu-warning-level)
       cpu_warning_level=$2 
@@ -217,6 +224,7 @@ if [ "yes" == "$send_test" ]; then
   watch_services="${watch_services:-0}"
   watch_hard_disk="${watch_hard_disk:-0}"
   disk_space_perc_limit="${disk_space_perc_limit:-80}"
+  watch_supervisor="${watch_supervisor:-0}"
 fi
 
 if [ "" == "$send_alert_every_minutes" ]; then
@@ -280,6 +288,13 @@ if [ "" == "$disk_space_perc_limit" ] && [ "1" == "$watch_hard_disk" ]; then
   exit 1
 fi
 
+# watch_supervisor is optional: default to disabled so configs and installs
+# that predate this feature keep working without changes.
+if [ "" == "$watch_supervisor" ]; then
+  watch_supervisor=$(awk -F'=' '/^watch_supervisor=/ { print $2 }' $config_file)
+fi
+watch_supervisor="${watch_supervisor:-0}"
+
 # Check telegram bot key and chat id
 telegram_bot_token=$(awk -F'=' -v k="$telegram_variable_token" '$1 == k { print $2 }' "$config_file")
 if [ "" == "$telegram_bot_token" ]; then
@@ -341,6 +356,18 @@ if [ "1" == "$watch_services" ]; then
     send_message "$message" "no"
   fi
 fi
+
+# Check the supervisor processes and if one or more are FATAL/BACKOFF, send an alert and exit
+if [ "1" == "$watch_supervisor" ]; then
+  if command -v supervisorctl >/dev/null 2>&1; then
+    supervisor_failed=$(sudo supervisorctl status 2>/dev/null | grep -Ei "FATAL|BACKOFF")
+    if [ -n "$supervisor_failed" ]; then
+      message="Supervisor failed processes: $supervisor_failed"
+      send_message "$message" "no"
+    fi
+  fi
+fi
+
 # Check the free disk space
 if [ "1" == "$watch_hard_disk" ]; then
   disk_perc_used=$(df / --output=pcent | tr -cd 0-9)

@@ -79,6 +79,17 @@ STUB
   # sudo: pass-through (preserves PATH so stubs are still found)
   printf '#!/bin/bash\nexec "$@"\n' > "$_TESTDIR/stubs/sudo"
 
+  # supervisorctl: no failures. Create $_TESTDIR/supervisor_failed to simulate one.
+  cat > "$_TESTDIR/stubs/supervisorctl" <<'STUB'
+#!/bin/bash
+if [ -f "$(dirname "$0")/../supervisor_failed" ]; then
+  printf 'worker_broken                    FATAL     Exited too quickly\n'
+  printf 'worker_ok                        RUNNING   pid 123, uptime 1:00:00\n'
+else
+  printf 'worker_ok                        RUNNING   pid 123, uptime 1:00:00\n'
+fi
+STUB
+
   # df: 50% disk. Override: write integer pct to $_TESTDIR/disk_pct.
   cat > "$_TESTDIR/stubs/df" <<'STUB'
 #!/bin/bash
@@ -87,6 +98,23 @@ printf 'Use%%\n%s%%\n' "$pct"
 STUB
 
   chmod +x "$_TESTDIR"/stubs/*
+}
+
+# Write a complete monitoring config with supervisor enabled
+full_config_with_supervisor() {
+  cat > "$_TESTDIR/guardian.conf" <<EOF
+telegram_bot_token=fake_token_abc
+telegram_user_chat_id=fake_chat_456
+send_alert_every_minutes=60
+memory_perc_limit=70
+disk_space_perc_limit=80
+cpu_warning_level=medium
+watch_cpu=0
+watch_ram=0
+watch_services=0
+watch_hard_disk=0
+watch_supervisor=1
+EOF
 }
 
 teardown() { rm -rf "$_TESTDIR"; }
@@ -312,6 +340,29 @@ t_failed_service_alert() {
   teardown
 }
 
+# Core: failed supervisor process triggers alert
+t_supervisor_failed_alert() {
+  setup
+  full_config_with_supervisor
+  touch "$_TESTDIR/supervisor_failed"
+  run --config "$_TESTDIR/guardian.conf" \
+      --watch-cpu 0 --watch-ram 0 --watch-services 0 --watch-hard-disk 0 --watch-supervisor 1 --warn-every 60
+  assert_exit     "supervisor failed: exits 0"          0 "$RC"
+  assert_contains "supervisor failed: alert triggered"  "message has been sent" "$OUT"
+  teardown
+}
+
+# Core: supervisor disabled by default and missing binary must not fail the run
+t_supervisor_optional_default() {
+  setup
+  full_config
+  run --config "$_TESTDIR/guardian.conf" \
+      --watch-cpu 0 --watch-ram 0 --watch-services 0 --watch-hard-disk 0 --warn-every 60
+  assert_exit     "supervisor optional: exits 0"  0 "$RC"
+  assert_contains "supervisor optional: all right" "it's all right" "$OUT"
+  teardown
+}
+
 # Core: disk over limit triggers alert
 t_disk_full_alert() {
   setup
@@ -343,6 +394,8 @@ t_all_clear
 t_high_cpu_alert
 t_high_ram_alert
 t_failed_service_alert
+t_supervisor_failed_alert
+t_supervisor_optional_default
 t_disk_full_alert
 
 echo ""

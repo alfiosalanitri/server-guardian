@@ -94,6 +94,7 @@ Options can be set in `.env` (written interactively by `sudo make install`) or o
 | `watch_services` | `1` to monitor failed systemd services, `0` to skip | — |
 | `watch_hard_disk` | `1` to monitor disk space, `0` to skip | — |
 | `disk_space_perc_limit` | Disk usage percentage threshold | — |
+| `watch_supervisor` | `1` to monitor failed supervisor (supervisorctl) processes, `0` to skip | `0` |
 
 ### CLI flags
 
@@ -104,6 +105,7 @@ Options can be set in `.env` (written interactively by `sudo make install`) or o
 | `--watch-ram 0\|1` | Enable/disable RAM monitoring |
 | `--watch-services 0\|1` | Enable/disable failed service monitoring |
 | `--watch-hard-disk 0\|1` | Enable/disable disk monitoring |
+| `--watch-supervisor 0\|1` | Enable/disable supervisor (supervisorctl) failed process monitoring |
 | `--cpu-warning-level high\|medium\|low` | CPU alert sensitivity |
 | `--memory-limit N` | RAM percentage threshold |
 | `--disk-space-limit N` | Disk percentage threshold |
@@ -122,6 +124,7 @@ sudo /opt/server-guardian/guardian.sh \
   --watch-ram 1 --memory-limit 60 \
   --watch-services 0 \
   --watch-hard-disk 0 \
+  --watch-supervisor 1 \
   --config /home/myuser/.guardian.conf \
   --config-telegram-variable-token MY_TELEGRAM_TOKEN \
   --config-telegram-variable-chatid MY_CHAT_ID
