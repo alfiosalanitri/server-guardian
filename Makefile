@@ -1,4 +1,4 @@
-.PHONY: help install uninstall test release
+.PHONY: help install uninstall test release version update
 
 help:
 	@echo "Usage: make <target>"
@@ -6,6 +6,8 @@ help:
 	@echo "  install    Interactively configure and install server-guardian (run with sudo)"
 	@echo "  uninstall  Remove server-guardian from the scheduler"
 	@echo "  test       Run the test suite"
+	@echo "  version    Show the installed server-guardian version"
+	@echo "  update     Update to the latest GitHub release (run with sudo, on production)"
 	@echo "  release    Tag a new release (suggests a semver bump, pushes the tag)"
 
 install:
@@ -25,6 +27,16 @@ uninstall:
 
 test:
 	@bash tests/guardian.test.sh
+
+version:
+	@if [ -f VERSION ]; then \
+	  echo "server-guardian v$$(cat VERSION)"; \
+	else \
+	  echo "server-guardian (unknown version, no VERSION file found)"; \
+	fi
+
+update:
+	@bash update.sh
 
 release:
 	@bash release.sh

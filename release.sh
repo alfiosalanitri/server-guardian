@@ -73,6 +73,11 @@ echo ""
 read -r -p "Create and push tag $new_version? [y/N]: " confirm
 [[ "$confirm" =~ ^[Yy]$ ]] || { warning "Aborted, no tag created."; exit 0; }
 
+echo "${new_version#v}" > VERSION
+git add VERSION
+git commit -m "chore: bump version to $new_version"
+git push origin HEAD
+
 git tag -a "$new_version" -m "$new_version"
 git push origin "$new_version"
 

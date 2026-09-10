@@ -76,6 +76,30 @@ Stops and disables the timer, removes the symlinks from `/etc/systemd/system/`, 
 
 ---
 
+## Version and updates
+
+```bash
+make version
+```
+
+Prints the currently installed version, read from the `VERSION` file shipped in the release archive.
+
+```bash
+sudo make update
+```
+
+Run this on a production server to update an existing install to the latest GitHub release. It:
+
+1. Compares the local `VERSION` against the latest release tag on GitHub
+2. Asks for confirmation if a newer version is available
+3. Downloads and extracts the release tarball
+4. Overwrites `guardian.sh`, `install.sh`, `update.sh`, `Makefile`, `README.md`, `LICENSE`, `.env.demo`, `VERSION` and `systemd/guardian.timer`
+5. Reloads systemd if the timer is installed
+
+`.env`, `systemd/guardian.service` and the runtime state files (`send-alert.txt`, `top-report.txt`) are never part of the release archive, so your configuration and alert history are left untouched.
+
+---
+
 ## Configuration
 
 Options can be set in `.env` (written interactively by `sudo make install`) or overridden at runtime via CLI flags. CLI flags always take precedence.

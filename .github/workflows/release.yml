@@ -20,7 +20,7 @@ jobs:
           set -euo pipefail
           stage="server-guardian-${GITHUB_REF_NAME}"
           mkdir "$stage"
-          cp -r guardian.sh install.sh Makefile README.md LICENSE .env.demo systemd "$stage/"
+          cp -r guardian.sh install.sh update.sh Makefile README.md LICENSE .env.demo VERSION systemd "$stage/"
           tar -czf server-guardian.tar.gz "$stage"
 
       - name: Create GitHub release
