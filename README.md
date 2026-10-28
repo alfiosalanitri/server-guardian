@@ -11,7 +11,7 @@ A bash script that monitors server health and sends Telegram alerts when:
 
 ## Requirements
 
-- `bash`, `curl`, `systemd`
+- `bash`, `curl`, `systemd`, `make`
 - A Telegram bot token and chat ID ([how to create a bot](https://core.telegram.org/bots#how-do-i-create-a-bot))
 
 ---
